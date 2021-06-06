@@ -139,6 +139,11 @@ function built_entity(e)
         process_fast_replace(entity)
         belt_functions.built_splitter(entity)
     end
+
+    if entity.type == "loader-1x1" then
+        process_fast_replace(entity)
+        belt_functions.built_belt(entity)
+    end
 end
 
 script.on_event(
@@ -176,6 +181,10 @@ function remove_entity(e)
     if entity.type == "splitter" then
         belt_functions.remove_splitter(entity)
     end
+
+    if entity.type == "loader-1x1" then
+        belt_functions.remove_belt(entity)
+    end
 end
 
 script.on_event(
@@ -212,6 +221,11 @@ script.on_event({ defines.events.on_player_rotated_entity },
         if e.entity.type == "splitter" then
             belt_functions.remove_splitter(e.entity, e.previous_direction)
             belt_functions.built_splitter(e.entity)
+        end
+
+        if e.entity.type == "loader-1x1" then
+            belt_functions.remove_belt(e.entity, e.previous_direction)
+            belt_functions.built_belt(e.entity)
         end
     end
 )

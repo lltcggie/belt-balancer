@@ -197,6 +197,14 @@ function belt_functions.built_belt(belt)
         end
     end
 
+    if belt.type == "loader-1x1" then
+        if belt.loader_type == "input" then
+            into_part = nil
+        elseif belt.loader_type == "output" then
+            from_part = nil
+        end
+    end
+
     if into_part then
         local stack_belt = belt_functions.get_or_create(belt)
 

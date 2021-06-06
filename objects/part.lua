@@ -186,6 +186,20 @@ function part_functions.find_input_output_belts(balancer_part)
         end
     end
 
+    local found_loaders = balancer_part.surface.find_entities_filtered {
+        position = splitter_pos,
+        type = "loader-1x1",
+        radius = 1
+    }
+    for _, loaders in pairs(found_loaders) do
+        local into_pos, from_pos = belt_functions.get_input_output_pos(loaders)
+        if loaders.loader_type == "output" and into_pos.x == splitter_pos.x and into_pos.y == splitter_pos.y then
+            input_belts[loaders.unit_number] = { belt = loaders, belt_type = "loader" }
+        elseif loaders.loader_type == "input" and from_pos.x == splitter_pos.x and from_pos.y == splitter_pos.y then
+            output_belts[loaders.unit_number] = { belt = loaders, belt_type = "loader" }
+        end
+    end
+
     return input_belts, output_belts
 end
 
