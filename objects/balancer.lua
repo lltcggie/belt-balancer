@@ -52,12 +52,12 @@ function balancer_functions.merge(balancer_index, balancer_index2)
         end
     end
 
-    for k, v in pairs(balancer2.input_lanes) do
-        balancer.input_lanes[k] = v
+    for i=1, #balancer2.input_lanes do
+        table.insert(balancer.input_lanes, balancer2.input_lanes[i])
     end
 
-    for k, v in pairs(balancer2.output_lanes) do
-        balancer.output_lanes[k] = v
+    for i=1, #balancer2.output_lanes do
+        table.insert(balancer.output_lanes, balancer2.output_lanes[i])
     end
 
     for _, item in pairs(balancer2.buffer) do
@@ -123,7 +123,7 @@ end
 function balancer_functions.recalculate_nth_tick(balancer_index)
     local balancer = global.balancer[balancer_index]
 
-    if table_size(balancer.input_lanes) == 0 or table_size(balancer.output_lanes) == 0 or table_size(balancer.parts) == 0 then
+    if #balancer.input_lanes == 0 or #balancer.output_lanes == 0 or table_size(balancer.parts) == 0 then
         unregister_on_tick(balancer_index)
         balancer.nth_tick = 0
         return
@@ -179,23 +179,22 @@ end
 
 function balancer_functions.run(balancer_index)
     local balancer = global.balancer[balancer_index]
-    local input_lane_count = table_size(balancer.input_lanes)
-    local output_lane_count = table_size(balancer.output_lanes)
+    local output_lane_count = #balancer.output_lanes
 
-    if input_lane_count > 0 and output_lane_count > 0 then
+    if #balancer.input_lanes > 0 and output_lane_count > 0 then
         -- get how many items are needed per lane
         local buffer_count = #balancer.buffer
         local gather_amount = (output_lane_count * 2) - buffer_count
 
         local current_lanes = balancer.input_lanes
-        local current_lane_count = input_lane_count
         local next_lanes = nil
 
         -- INPUT
-        while gather_amount > 0 and current_lane_count > 0 do
+        while gather_amount > 0 and #current_lanes > 0 do
             next_lanes = {}
 
-            for k, lane_index in pairs(current_lanes) do
+            for i=1, #current_lanes do
+                local lane_index = current_lanes[i]
                 local lane = global.lanes[lane_index]
                 if #lane > 0 then
                     -- remove item from lane and add to buffer
@@ -205,19 +204,19 @@ function balancer_functions.run(balancer_index)
                     table.insert(balancer.buffer, simple_item)
                     gather_amount = gather_amount - 1
 
-                    next_lanes[k] = lane_index
+                    table.insert(next_lanes, lane_index)
                 end
             end
 
             current_lanes = next_lanes
-            current_lane_count = table_size(current_lanes)
         end
 
         -- create table with output lanes, with last_success at the beginning
         local output_lanes_sorted = {}
         local last_add_index = 0
         local found_last_success = false
-        for _, lane in pairs(balancer.output_lanes) do
+        for i=1, #balancer.output_lanes do
+            local lane = balancer.output_lanes[i]
             if found_last_success then
                 last_add_index = last_add_index + 1
                 table.insert(output_lanes_sorted, last_add_index, lane)
@@ -232,17 +231,21 @@ function balancer_functions.run(balancer_index)
 
         -- put items onto the belt
         local function put_on_belts(lanes)
+            if #balancer.buffer == 0 then
+                return {}
+            end
+
             local second_iteration = {}
-            for _, lane_index in pairs(lanes) do
-                if #balancer.buffer > 0 then
-                    local lane = global.lanes[lane_index]
-                    if lane.can_insert_at_back() and lane.insert_at_back(balancer.buffer[1]) then
-                        table.remove(balancer.buffer, 1)
-                        balancer.last_success = lane_index
-                        table.insert(second_iteration, lane_index)
+            for i=1, #lanes do
+                local lane_index = lanes[i]
+                local lane = global.lanes[lane_index]
+                if lane.can_insert_at_back() and lane.insert_at_back(balancer.buffer[1]) then
+                    table.remove(balancer.buffer, 1)
+                    balancer.last_success = lane_index
+                    table.insert(second_iteration, lane_index)
+                    if #balancer.buffer == 0 then
+                        break
                     end
-                else
-                    break
                 end
             end
             return second_iteration
@@ -260,7 +263,7 @@ function balancer_functions.check_track(balancer_index, drop_to)
     local balancer = global.balancer[balancer_index]
     if table_size(balancer.parts) == 0 then
         -- balancer is not valid, remove it from global stack
-        if table_size(balancer.output_lanes) > 0 or table_size(balancer.input_lanes) > 0 then
+        if #balancer.output_lanes > 0 or #balancer.input_lanes > 0 then
             print("Belt-balancer: Something is off with the removing of balancer lanes")
             print("balancer: ", balancer_index)
             print(serpent.block(global.balancer))
@@ -389,11 +392,11 @@ function balancer_functions.new_from_part_list(part_list)
         end
 
         -- add lanes to balancer
-        for _, lane in pairs(part.input_lanes) do
-            balancer.input_lanes[lane] = lane
+        for i=1, #part.input_lanes do
+            table.insert(balancer.input_lanes, part.input_lanes[i])
         end
-        for _, lane in pairs(part.output_lanes) do
-            balancer.output_lanes[lane] = lane
+        for i=1, #part.output_lanes do
+            table.insert(balancer.output_lanes, part.output_lanes[i])
         end
     end
 

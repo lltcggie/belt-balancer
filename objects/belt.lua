@@ -217,9 +217,9 @@ function belt_functions.built_belt(belt)
         local balancer = global.balancer[into_part.balancer]
         for _, lane in pairs(stack_belt.lanes) do
             -- add lanes to balancer
-            balancer.input_lanes[lane] = lane
+            table.insert(balancer.input_lanes, lane)
             -- add lanes to part
-            into_part.input_lanes[lane] = lane
+            table.insert(into_part.input_lanes, lane)
         end
 
         -- recalculate nth_tick on changed balancer
@@ -238,9 +238,9 @@ function belt_functions.built_belt(belt)
         local balancer = global.balancer[from_part.balancer]
         for _, lane in pairs(stack_belt.lanes) do
             -- add lanes to balancer
-            balancer.output_lanes[lane] = lane
+            table.insert(balancer.output_lanes, lane)
             -- add lanes to part
-            from_part.output_lanes[lane] = lane
+            table.insert(from_part.output_lanes, lane)
         end
 
         -- recalculate nth_tick on changed balancer
@@ -266,10 +266,10 @@ function belt_functions.built_splitter(splitter_entity)
         for _, lane_i in pairs(into_part.lanes) do
             local lane = stack_belt.lanes[lane_i]
 
-            --add lanes to balancer
-            balancer.input_lanes[lane] = lane
-            --add lanes to part
-            into_part.part.input_lanes[lane] = lane
+            -- add lanes to balancer
+            table.insert(balancer.input_lanes, lane)
+            -- add lanes to part
+            table.insert(into_part.part.input_lanes, lane)
         end
 
         -- recalculate nth_tick on changed balancer
@@ -289,10 +289,10 @@ function belt_functions.built_splitter(splitter_entity)
         for _, lane_i in pairs(from_part.lanes) do
             local lane = stack_belt.lanes[lane_i]
             --add lanes to balancer
-            balancer.output_lanes[lane] = lane
+            table.insert(balancer.output_lanes, lane)
 
             --add lanes to part
-            from_part.part.output_lanes[lane] = lane
+            table.insert(from_part.part.output_lanes, lane)
         end
 
         -- recalculate nth_tick on changed balancer
@@ -334,9 +334,9 @@ function belt_functions.remove_belt(entity, direction, unit_number, surface, pos
         local balancer = global.balancer[into_part.balancer]
         for _, lane in pairs(belt.lanes) do
             -- remove lanes from balancer
-            balancer.input_lanes[lane] = nil
+            remove_from_itable(balancer.input_lanes, lane)
             -- remove lanes from part
-            into_part.input_lanes[lane] = nil
+            remove_from_itable(into_part.input_lanes, lane)
         end
     end
 
@@ -347,9 +347,9 @@ function belt_functions.remove_belt(entity, direction, unit_number, surface, pos
         local balancer = global.balancer[from_part.balancer]
         for _, lane in pairs(belt.lanes) do
             -- remove lanes from balancer
-            balancer.output_lanes[lane] = nil
+            remove_from_itable(balancer.output_lanes, lane)
             -- remove lanes from part
-            from_part.output_lanes[lane] = nil
+            remove_from_itable(from_part.output_lanes, lane)
         end
     end
 
@@ -392,9 +392,9 @@ function belt_functions.remove_splitter(entity, direction, unit_number, surface,
         local balancer = global.balancer[part.part.balancer]
         for _, lane in pairs(belt.lanes) do
             -- remove lanes from balancer
-            balancer.input_lanes[lane] = nil
+            remove_from_itable(balancer.input_lanes, lane)
             -- remove lanes from part
-            part.part.input_lanes[lane] = nil
+            remove_from_itable(part.part.input_lanes, lane)
         end
     end
 
@@ -405,9 +405,9 @@ function belt_functions.remove_splitter(entity, direction, unit_number, surface,
         local balancer = global.balancer[part.part.balancer]
         for _, lane in pairs(belt.lanes) do
             -- remove lanes from balancer
-            balancer.output_lanes[lane] = nil
+            remove_from_itable(balancer.output_lanes, lane)
             -- remove lanes from part
-            part.part.output_lanes[lane] = nil
+            remove_from_itable(part.part.output_lanes, lane)
         end
     end
 

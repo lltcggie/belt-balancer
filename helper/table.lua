@@ -15,3 +15,12 @@ function table.contains(table, element)
     end
     return false
 end
+
+function remove_from_itable(_table, remove_value)
+    for i=1, #_table do
+        if _table[i] == remove_value then
+            table.remove(_table, i)
+            return true
+        end
+    end
+end

@@ -51,13 +51,13 @@ function part_functions.get_or_create(entity)
         if input_belt.lanes then
             for _, lane in pairs(input_belt.lanes) do
                 local belt_lane = belt.lanes[lane]
-                balancer.input_lanes[belt_lane] = belt_lane
-                part.input_lanes[belt_lane] = belt_lane
+                table.insert(balancer.input_lanes, belt_lane)
+                table.insert(part.input_lanes, belt_lane)
             end
         else
             for _, v in pairs(belt.lanes) do
-                balancer.input_lanes[v] = v
-                part.input_lanes[v] = v
+                table.insert(balancer.input_lanes, v)
+                table.insert(part.input_lanes, v)
             end
         end
     end
@@ -78,13 +78,13 @@ function part_functions.get_or_create(entity)
         if output_belt.lanes then
             for _, lane in pairs(output_belt.lanes) do
                 local belt_lane = belt.lanes[lane]
-                balancer.output_lanes[belt_lane] = belt_lane
-                part.output_lanes[belt_lane] = belt_lane
+                table.insert(balancer.output_lanes, belt_lane)
+                table.insert(part.output_lanes, belt_lane)
             end
         else
             for _, lane in pairs(belt.lanes) do
-                balancer.output_lanes[lane] = lane
-                part.output_lanes[lane] = lane
+                table.insert(balancer.output_lanes, lane)
+                table.insert(part.output_lanes, lane)
             end
         end
     end
@@ -228,15 +228,15 @@ function part_functions.remove(entity, buffer)
                     -- remove lanes from balancer
                     for _, lane_index in pairs(pos.lanes) do
                         local lane = belt.lanes[lane_index]
-                        balancer.input_lanes[lane] = nil
+                        remove_from_itable(balancer.input_lanes, lane)
                     end
                 end
             end
 
             -- check if lanes are still in the balancer
             local found_lane = false
-            for _, lane in pairs(balancer.input_lanes) do
-                if table.contains(belt.lanes, lane) then
+            for i=1, #balancer.input_lanes do
+                if table.contains(belt.lanes, balancer.input_lane[i]) then
                     found_lane = true
                     break
                 end
@@ -252,7 +252,7 @@ function part_functions.remove(entity, buffer)
 
             -- remove lanes from balancer
             for _, lane in pairs(belt.lanes) do
-                balancer.input_lanes[lane] = nil
+                remove_from_itable(balancer.input_lanes, lane)
             end
         end
 
@@ -272,15 +272,15 @@ function part_functions.remove(entity, buffer)
                     -- remove lanes from balancer
                     for _, lane_index in pairs(pos.lanes) do
                         local lane = belt.lanes[lane_index]
-                        balancer.output_lanes[lane] = nil
+                        remove_from_itable(balancer.output_lanes, lane)
                     end
                 end
             end
 
             -- check if lanes are still in the balancer
             local found_lane = false
-            for _, lane in pairs(balancer.output_lanes) do
-                if table.contains(belt.lanes, lane) then
+            for i=1, #balancer.output_lanes do
+                if table.contains(belt.lanes, balancer.output_lanes[i]) then
                     found_lane = true
                     break
                 end
@@ -296,7 +296,7 @@ function part_functions.remove(entity, buffer)
 
             -- remove lanes from balancer
             for _, lane in pairs(belt.lanes) do
-                balancer.output_lanes[lane] = nil
+                remove_from_itable(balancer.output_lanes, lane)
             end
         end
 
