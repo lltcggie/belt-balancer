@@ -179,18 +179,20 @@ end
 
 function balancer_functions.run(balancer_index)
     local balancer = global.balancer[balancer_index]
+    local input_lane_count = table_size(balancer.input_lanes)
+    local output_lane_count = table_size(balancer.output_lanes)
 
-    if table_size(balancer.input_lanes) > 0 and table_size(balancer.output_lanes) > 0 then
+    if input_lane_count > 0 and output_lane_count > 0 then
         -- get how many items are needed per lane
         local buffer_count = #balancer.buffer
-        local output_lane_count = table_size(balancer.output_lanes)
         local gather_amount = (output_lane_count * 2) - buffer_count
 
-        local next_lanes = table.deepcopy(balancer.input_lanes)
+        local current_lanes = balancer.input_lanes
+        local current_lane_count = input_lane_count
+        local next_lanes = nil
 
         -- INPUT
-        while gather_amount > 0 and table_size(next_lanes) > 0 do
-            local current_lanes = table.deepcopy(next_lanes)
+        while gather_amount > 0 and current_lane_count > 0 do
             next_lanes = {}
 
             for k, lane_index in pairs(current_lanes) do
@@ -206,6 +208,9 @@ function balancer_functions.run(balancer_index)
                     next_lanes[k] = lane_index
                 end
             end
+
+            current_lanes = next_lanes
+            current_lane_count = table_size(current_lanes)
         end
 
         -- create table with output lanes, with last_success at the beginning
