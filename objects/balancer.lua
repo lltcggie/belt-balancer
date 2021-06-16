@@ -199,7 +199,20 @@ function balancer_functions.run(balancer_index)
                 if #lane > 0 then
                     -- remove item from lane and add to buffer
                     local lua_item = lane[1]
-                    local simple_item = convert_LuaItemStack_to_SimpleItemStack(lua_item)
+                    local simple_item = {
+                        name = lua_item.name,
+                        count = lua_item.count,
+                        health = lua_item.health,
+                        durability = lua_item.durability,
+                    }
+
+                    local type = lua_item.prototype.type
+                    if type == "ammo" then
+                        simple_item.ammo = lua_item.ammo
+                    elseif type == "item-with-tags" then
+                        simple_item.tags = lua_item.tags
+                    end
+
                     lane.remove_item(lua_item)
                     table.insert(balancer.buffer, simple_item)
                     gather_amount = gather_amount - 1
