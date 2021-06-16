@@ -244,10 +244,6 @@ function balancer_functions.run(balancer_index)
 
         -- put items onto the belt
         local function put_on_belts(lanes)
-            if #balancer.buffer == 0 then
-                return {}
-            end
-
             local second_iteration = {}
             for i=1, #lanes do
                 local lane_index = lanes[i]
@@ -264,7 +260,12 @@ function balancer_functions.run(balancer_index)
             return second_iteration
         end
 
-        put_on_belts(put_on_belts(output_lanes_sorted))
+        if #output_lanes_sorted > 0 and #balancer.buffer > 0 then
+            output_lanes_sorted = put_on_belts(output_lanes_sorted)
+        end
+        if #output_lanes_sorted > 0 and #balancer.buffer > 0 then
+            put_on_belts(output_lanes_sorted)
+        end
     end
 end
 
