@@ -177,6 +177,24 @@ function balancer_functions.recalculate_nth_tick(balancer_index)
     end
 end
 
+-- put items onto the belt
+function put_on_belts(balancer, lanes)
+    local second_iteration = {}
+    for i=1, #lanes do
+        local lane_index = lanes[i]
+        local lane = global.lanes[lane_index]
+        if lane.can_insert_at_back() and lane.insert_at_back(balancer.buffer[1]) then
+            table.remove(balancer.buffer, 1)
+            balancer.last_success = lane_index
+            table.insert(second_iteration, lane_index)
+            if #balancer.buffer == 0 then
+                break
+            end
+        end
+    end
+    return second_iteration
+end
+
 function balancer_functions.run(balancer_index)
     local balancer = global.balancer[balancer_index]
     local output_lane_count = #balancer.output_lanes
@@ -242,29 +260,11 @@ function balancer_functions.run(balancer_index)
             end
         end
 
-        -- put items onto the belt
-        local function put_on_belts(lanes)
-            local second_iteration = {}
-            for i=1, #lanes do
-                local lane_index = lanes[i]
-                local lane = global.lanes[lane_index]
-                if lane.can_insert_at_back() and lane.insert_at_back(balancer.buffer[1]) then
-                    table.remove(balancer.buffer, 1)
-                    balancer.last_success = lane_index
-                    table.insert(second_iteration, lane_index)
-                    if #balancer.buffer == 0 then
-                        break
-                    end
-                end
-            end
-            return second_iteration
-        end
-
         if #output_lanes_sorted > 0 and #balancer.buffer > 0 then
-            output_lanes_sorted = put_on_belts(output_lanes_sorted)
+            output_lanes_sorted = put_on_belts(balancer, output_lanes_sorted)
         end
         if #output_lanes_sorted > 0 and #balancer.buffer > 0 then
-            put_on_belts(output_lanes_sorted)
+            put_on_belts(balancer, output_lanes_sorted)
         end
     end
 end
