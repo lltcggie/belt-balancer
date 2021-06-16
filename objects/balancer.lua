@@ -180,13 +180,15 @@ end
 -- put items onto the belt
 function put_on_belts(balancer, lanes)
     local second_iteration = {}
+    local second_iteration_count = 0
     for i=1, #lanes do
         local lane_index = lanes[i]
         local lane = global.lanes[lane_index]
         if lane.can_insert_at_back() and lane.insert_at_back(balancer.buffer[1]) then
             table.remove(balancer.buffer, 1)
             balancer.last_success = lane_index
-            table.insert(second_iteration, lane_index)
+            second_iteration_count = second_iteration_count + 1
+            second_iteration[second_iteration_count] = lane_index
             if #balancer.buffer == 0 then
                 break
             end
@@ -206,10 +208,12 @@ function balancer_functions.run(balancer_index)
 
         local current_lanes = balancer.input_lanes
         local next_lanes = nil
+        local next_lane_count = 0
 
         -- INPUT
         while gather_amount > 0 and #current_lanes > 0 do
             next_lanes = {}
+            next_lane_count = 0
 
             for i=1, #current_lanes do
                 local lane_index = current_lanes[i]
@@ -232,10 +236,12 @@ function balancer_functions.run(balancer_index)
                     end
 
                     lane.remove_item(lua_item)
-                    table.insert(balancer.buffer, simple_item)
+                    buffer_count = buffer_count + 1
+                    balancer.buffer[buffer_count] = simple_item
                     gather_amount = gather_amount - 1
 
-                    table.insert(next_lanes, lane_index)
+                    next_lane_count = next_lane_count + 1
+                    next_lanes[next_lane_count] = lane_index
                 end
             end
 
