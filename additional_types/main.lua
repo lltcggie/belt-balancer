@@ -29,6 +29,14 @@ Balancer.nth_tick = nil
 ---@type uint
 Balancer.last_success = nil
 
+--- The last successful output-lane.
+---@type uint
+Balancer.next_input = 1
+
+--- The last successful output-lane.
+---@type uint
+Balancer.next_output = 1
+
 --------------------------------------------------------------------------------------------------------------
 
 ---@class Belt

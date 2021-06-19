@@ -17,6 +17,8 @@ function balancer_functions.new()
     balancer.buffer = {}
     balancer.input_lanes = {}
     balancer.output_lanes = {}
+    balancer.next_input = 1
+    balancer.next_output = 1
 
     global.balancer[balancer.unit_number] = balancer
 
@@ -177,101 +179,61 @@ function balancer_functions.recalculate_nth_tick(balancer_index)
     end
 end
 
--- put items onto the belt
-function put_on_belts(balancer, lanes)
-    local second_iteration = {}
-    local second_iteration_count = 0
-    for i=1, #lanes do
-        local lane_index = lanes[i]
-        local lane = global.lanes[lane_index]
-        if lane.can_insert_at_back() and lane.insert_at_back(balancer.buffer[1]) then
-            table.remove(balancer.buffer, 1)
-            balancer.last_success = lane_index
-            second_iteration_count = second_iteration_count + 1
-            second_iteration[second_iteration_count] = lane_index
-            if #balancer.buffer == 0 then
-                break
-            end
-        end
-    end
-    return second_iteration
-end
-
 function balancer_functions.run(balancer_index)
     local balancer = global.balancer[balancer_index]
+    local input_lane_count = #balancer.input_lanes
     local output_lane_count = #balancer.output_lanes
 
-    if #balancer.input_lanes > 0 and output_lane_count > 0 then
-        -- get how many items are needed per lane
-        local buffer_count = #balancer.buffer
-        local gather_amount = (output_lane_count * 2) - buffer_count
+    if input_lane_count > 0 and output_lane_count > 0 then
+        local next_input = balancer.next_input
+        local next_output = balancer.next_output
 
-        local current_lanes = balancer.input_lanes
-        local next_lanes = nil
-        local next_lane_count = 0
+        local input_index = 1
+        local output_index = 1
 
-        -- INPUT
-        while gather_amount > 0 and #current_lanes > 0 do
-            next_lanes = {}
-            next_lane_count = 0
+        local lanes = global.lanes
 
-            for i=1, #current_lanes do
-                local lane_index = current_lanes[i]
-                local lane = global.lanes[lane_index]
-                if #lane > 0 then
-                    -- remove item from lane and add to buffer
-                    local lua_item = lane[1]
-                    local simple_item = {
-                        name = lua_item.name,
-                        count = lua_item.count,
-                        health = lua_item.health,
-                        durability = lua_item.durability,
-                    }
+        -- まず出力先があるか見る
+        for j=0, output_lane_count - 1 do
+            if next_output <= output_lane_count then
+                output_index = next_output
+            else
+                output_index = 1
+            end
 
-                    local type = lua_item.prototype.type
-                    if type == "ammo" then
-                        simple_item.ammo = lua_item.ammo
-                    elseif type == "item-with-tags" then
-                        simple_item.tags = lua_item.tags
+            local output_lane_index = balancer.output_lanes[output_index]
+            local output_lane = lanes[output_lane_index]
+
+            if output_lane.can_insert_at_back() then
+                -- 出力先が見つかったら入力アイテムがあるか見て存在したら出力先に配置
+                for i=0, input_lane_count - 1 do
+                    if next_input <= input_lane_count then
+                        input_index = next_input
+                    else
+                        input_index = 1
                     end
 
-                    lane.remove_item(lua_item)
-                    buffer_count = buffer_count + 1
-                    balancer.buffer[buffer_count] = simple_item
-                    gather_amount = gather_amount - 1
+                    next_input = input_index + 1
+        
+                    local input_lane_index = balancer.input_lanes[input_index]
+                    local input_lane = lanes[input_lane_index]
+                    if #input_lane > 0 then
+                        local lua_item = input_lane[1]
 
-                    next_lane_count = next_lane_count + 1
-                    next_lanes[next_lane_count] = lane_index
+                        if output_lane.insert_at_back(lua_item) then
+                            input_lane.remove_item(lua_item)
+                            next_output = output_index + 1
+                            break
+                        end
+                    end
                 end
-            end
-
-            current_lanes = next_lanes
-        end
-
-        -- create table with output lanes, with last_success at the beginning
-        local output_lanes_sorted = {}
-        local last_add_index = 0
-        local found_last_success = false
-        for i=1, #balancer.output_lanes do
-            local lane = balancer.output_lanes[i]
-            if found_last_success then
-                last_add_index = last_add_index + 1
-                table.insert(output_lanes_sorted, last_add_index, lane)
             else
-                table.insert(output_lanes_sorted, lane)
-            end
-
-            if lane == balancer.last_success then
-                found_last_success = true
+                next_output = output_index + 1
             end
         end
 
-        if #output_lanes_sorted > 0 and #balancer.buffer > 0 then
-            output_lanes_sorted = put_on_belts(balancer, output_lanes_sorted)
-        end
-        if #output_lanes_sorted > 0 and #balancer.buffer > 0 then
-            put_on_belts(balancer, output_lanes_sorted)
-        end
+        balancer.next_input = next_input
+        balancer.next_output = next_output
     end
 end
 
