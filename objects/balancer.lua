@@ -193,6 +193,9 @@ function balancer_functions.run(balancer_index)
 
         local lanes = global.lanes
 
+        local input_lane_item_counts = {}
+        local empty_input_lane_count = 0
+
         -- まず出力先があるか見る
         for j=0, output_lane_count - 1 do
             if next_output <= output_lane_count then
@@ -214,16 +217,38 @@ function balancer_functions.run(balancer_index)
                     end
 
                     next_input = input_index + 1
-        
+
                     local input_lane_index = balancer.input_lanes[input_index]
                     local input_lane = lanes[input_lane_index]
-                    if #input_lane > 0 then
+
+                    local input_lane_item_count = input_lane_item_counts[input_index]
+                    if input_lane_item_count == nil then
+                        input_lane_item_count = #input_lane
+                        input_lane_item_counts[input_index] = input_lane_item_count
+
+                        -- キャッシュ登録時に空の入力ラインもチェック
+                        if input_lane_item_count == 0 then
+                            empty_input_lane_count = empty_input_lane_count + 1
+                            if empty_input_lane_count == input_lane_count then
+                                goto exit
+                            end
+                        end
+                    end
+
+                    if input_lane_item_count > 0 then
                         local lua_item = input_lane[1]
 
                         if output_lane.insert_at_back(lua_item) then
                             input_lane.remove_item(lua_item)
+                            input_lane_item_counts[input_index] = input_lane_item_count - 1
                             next_output = output_index + 1
-                            break
+                            if input_lane_item_count == 0 then
+                                empty_input_lane_count = empty_input_lane_count + 1
+                                if empty_input_lane_count == input_lane_count then
+                                    goto exit
+                                end
+                                break
+                            end
                         end
                     end
                 end
@@ -232,6 +257,7 @@ function balancer_functions.run(balancer_index)
             end
         end
 
+        ::exit::
         balancer.next_input = next_input
         balancer.next_output = next_output
     end
