@@ -193,47 +193,104 @@ function balancer_functions.run(balancer_index)
 
         local lanes = global.lanes
 
-        -- まず出力先があるか見る
-        for j=0, output_lane_count - 1 do
-            if next_output <= output_lane_count then
-                output_index = next_output
-            else
-                output_index = 1
-            end
+        if input_lane_count <= 32 then -- 入力レーン数が32以下ならビット演算できるので全入力レーンが空になったら処理を打ち切るバージョンを実行する
+            local bit32_replace = bit32.replace
+            local not_empty_lane_bits = bit32_replace(0, 0xFFFFFFFF, 0, input_lane_count)
 
-            local output_lane_index = balancer.output_lanes[output_index]
-            local output_lane = lanes[output_lane_index]
+            -- まず出力先があるか見る
+            -- MEMO: 同じような処理が下にあるので、処理を直す場合はそちらも直すのを忘れないようにすること
+            for j=0, output_lane_count - 1 do
+                if next_output <= output_lane_count then
+                    output_index = next_output
+                else
+                    output_index = 1
+                end
 
-            if output_lane.can_insert_at_back() then
-                -- 出力先が見つかったら入力アイテムがあるか見て存在したら出力先に配置
-                for i=0, input_lane_count - 1 do
-                    if next_input <= input_lane_count then
-                        input_index = next_input
-                    else
-                        input_index = 1
-                    end
+                local output_lane_index = balancer.output_lanes[output_index]
+                local output_lane = lanes[output_lane_index]
 
-                    next_input = input_index + 1
-        
-                    local input_lane_index = balancer.input_lanes[input_index]
-                    local input_lane = lanes[input_lane_index]
-                    if #input_lane > 0 then
-                        local lua_item = input_lane[1]
+                if output_lane.can_insert_at_back() then
+                    -- 出力先が見つかったら入力アイテムがあるか見て存在したら出力先に配置
+                    for i=0, input_lane_count - 1 do
+                        if next_input <= input_lane_count then
+                            input_index = next_input
+                        else
+                            input_index = 1
+                        end
 
-                        if output_lane.insert_at_back(lua_item) then
-                            input_lane.remove_item(lua_item)
-                            next_output = output_index + 1
-                            break
+                        next_input = input_index + 1
+
+                        local input_lane_index = balancer.input_lanes[input_index]
+                        local input_lane = lanes[input_lane_index]
+                        local input_lane_item_count = #input_lane
+                        if input_lane_item_count > 0 then
+                            local lua_item = input_lane[1]
+
+                            if output_lane.insert_at_back(lua_item) then
+                                input_lane.remove_item(lua_item)
+                                next_output = output_index + 1
+                                if input_lane_item_count == 1 then -- 消費したのが入力レーンの最後の1個だったら
+                                    not_empty_lane_bits = bit32_replace(not_empty_lane_bits, 0, input_index - 1)
+                                    if not_empty_lane_bits == 0 then -- 全入力レーンが空になったので終了
+                                        goto exit
+                                    end
+                                    break
+                                end
+                                break
+                            end
                         end
                     end
+                else
+                    next_output = output_index + 1
                 end
-            else
-                next_output = output_index + 1
             end
-        end
 
-        balancer.next_input = next_input
-        balancer.next_output = next_output
+            ::exit::
+            balancer.next_input = next_input
+            balancer.next_output = next_output
+        else
+            -- まず出力先があるか見る
+            for j=0, output_lane_count - 1 do
+                if next_output <= output_lane_count then
+                    output_index = next_output
+                else
+                    output_index = 1
+                end
+
+                local output_lane_index = balancer.output_lanes[output_index]
+                local output_lane = lanes[output_lane_index]
+
+                if output_lane.can_insert_at_back() then
+                    -- 出力先が見つかったら入力アイテムがあるか見て存在したら出力先に配置
+                    for i=0, input_lane_count - 1 do
+                        if next_input <= input_lane_count then
+                            input_index = next_input
+                        else
+                            input_index = 1
+                        end
+
+                        next_input = input_index + 1
+
+                        local input_lane_index = balancer.input_lanes[input_index]
+                        local input_lane = lanes[input_lane_index]
+                        if #input_lane > 0 then
+                            local lua_item = input_lane[1]
+
+                            if output_lane.insert_at_back(lua_item) then
+                                input_lane.remove_item(lua_item)
+                                next_output = output_index + 1
+                                break
+                            end
+                        end
+                    end
+                else
+                    next_output = output_index + 1
+                end
+            end
+
+            balancer.next_input = next_input
+            balancer.next_output = next_output
+        end
     end
 end
 
